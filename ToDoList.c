@@ -4,14 +4,17 @@
 #include<math.h>
 #include<time.h>
 #include<windows.h>
+
 typedef struct 
 {
     int day;
     int month;
     int year;
+    int hours;
+    int minutes;
 }timeCreated;
 
-
+timeCreated tm[100];
 
 typedef struct
 {
@@ -27,6 +30,7 @@ typedef struct
     int id;
     char discription[100];
     char status[35];
+    int end;
 }data;
 data dt[100];
 deadline dl[100];
@@ -39,12 +43,12 @@ int todo = 0;
 
 int doing = 0;
 
+int match[20];
+
  //stores the id of deleted tasks.
 int deleted[100];
 
 int counter(int index) {
-    int deadline = dl[index].year + dl[index].mois + dl[index].jour;
-    
     time_t currentTime;
     struct tm *timeInfo;
 
@@ -54,7 +58,14 @@ int counter(int index) {
     int year = timeInfo->tm_year + 1900; // Years since 1900, so add 1900
 	int month = timeInfo->tm_mon + 1; // Months are zero-based, so add 1
     int day = timeInfo->tm_mday;
+    int hours = timeInfo->tm_hour;
+    int minutes = timeInfo->tm_min;
     int now = (year*365)+(month*30)+(day);
+    tm[index].year = year;
+    tm[index].day = day;
+    tm[index].month = month;
+    tm[index].hours = hours;
+    tm[index].minutes = minutes;
 }
 
 int main() {
@@ -90,18 +101,18 @@ int menu() {
     for (int i = 0; i < 10; i++)
     {
         printf("\033[1;31m-\033[0m");
-        Sleep(10);
+        Sleep(1);
     }
     char closed[19] = "Le program a quitte";
     for (int i = 0; i < 19; i++)
     {
         printf("\033[1;31m%c\033[0m",closed[i]);
-        Sleep(10);
+        Sleep(1);
     }
     for (int i = 0; i < 10; i++)
     {
         printf("\033[1;31m-\033[0m");
-        Sleep(10);
+        Sleep(1);
     }
     printf("\n\n");
         exit(EXIT_SUCCESS);
@@ -119,8 +130,10 @@ int add() {
         printf("\033[1;33mDescription de tache :\033[0m\n> ");
         scanf(" %29[^\n]",&dt[i].discription);
         dt[i].id = i + 1;
+        counter(count);
         printf("\n\033[1;36mIdentifiant de tache : %d\033[0m\n",dt[i].id);
         printf("\033[1;33m\nEntrer le deadline de tache :\033[0m\n\t\033[1;36m-Entrer la date sous format 'jj/mm/aaaa'-\033[0m\n\n> ");
+        
         for (int j = 0; j < 10; j++)
         {
             scanf("%d/%d/%d",&dl[i].jour,&dl[i].mois,&dl[i].year);
@@ -136,6 +149,14 @@ int add() {
                 j = 10;
             }
         }
+        ending(i);
+        if (dt[i].end < 3)
+        {
+            printf("\033[1;31mIl vous reste : %d jours pour finalisee.\033[0m\n",dt[i].end);
+        } else {
+            printf("\033[1;36mIl vous reste : %d jours pour finalisee.\033[0m\n",dt[i].end);
+        }
+        
         
         printf("\n\n\033[1;33mstatus de tache :\n\033[0m\n");
         int s = 0;
@@ -163,7 +184,7 @@ int add() {
             strcpy(dt[i].status,"A realiser");
             todo++;
         }
-        printf("\033[1;32mTache %d a ete ajoutee \t:\033[0m\n\033[1;33mNom du tache :\033[0m\t%s\n\033[1;33mStatus de tache :\033[0m\t%s\n\033[1;33mDeadline de tache :\033[0m\t%d / %d / %d\n\033[1;33mIdentifiant de tache :\033[0m\t%d\n",i+1,dt[i].name,dt[i].status,dl[i].jour,dl[i].mois,dl[i].year,dt[i].id);
+        printf("\033[1;32mTache %d a ete ajoutee le :\n (  %d / %d / %d ) ( %d:%d )\033[0m\n\033[1;33mNom du tache :\033[0m\t%s\n\033[1;33mStatus de tache :\033[0m\t%s\n\033[1;33mDeadline de tache :\033[0m\t%d / %d / %d\n\033[1;33mIdentifiant de tache :\033[0m\t%d\n",i+1,tm[i].day,tm[i].month,tm[i].year,tm[i].hours,tm[i].minutes,dt[i].name,dt[i].status,dl[i].jour,dl[i].mois,dl[i].year,dt[i].id);
         count++;
         printf("\n\033[1;31mAjouter une autre tache ?:\033[0m\n\t[\033[1;34m1\033[0m]-oui\n\t[\033[1;34m2\033[0m]-non\n> ");
         int y;
@@ -178,10 +199,82 @@ int add() {
             main();
         }
         }
-
 }
 int search(){
+    printf("\n[\033[1;34m1\033[0m]- Chercher par ID\n");
+    printf("[\033[1;34m2\033[0m]- Chercher par nom de tache\n");
+    printf("\n[\033[1;34m3\033[0m]- Quitter\n\n> ");
+    int s;
+    scanf("%d",&s);
+    if (s == 1)
+    {
+        printf("\033[1;33mEntrer l'ID du tache :\033[0m\n\n> ");
+        int ID;
+        int retries = 0;
+        scanf("%d",&ID);
+        for (int i = 0; i <= count; i++)
+        {
+            if (ID == dt[i].id)
+            {
+                printf("La tache a ete trouvee :\n\n");
+                printf("\033[1;32mTache %d a ete ajoutee le :\n (  %d / %d / %d ) ( %d:%d )\033[0m\n\033[1;33mNom du tache :\033[0m\t%s\n\033[1;33mDescription de tache :\033[0m%s\n\033[1;33mStatus de tache :\033[0m\t%s\n\033[1;33mDeadline de tache :\033[0m\t%d / %d / %d\n\033[1;33mIdentifiant de tache :\033[0m\t%d\n",i+1,tm[i].day,tm[i].month,tm[i].year,tm[i].hours,tm[i].minutes,dt[i].name,dt[i].discription,dt[i].status,dl[i].jour,dl[i].mois,dl[i].year,dt[i].id);
+                search();
+            } else {
+                retries++;
+            }
+            if (retries > count)
+            {
+                printf("\n\n\033[1;31mAucune tache a ete trouvee\033[0m\n");
+                search();
+            }
+            Sleep(20);
+        }
+        
+    } else if(s == 2) {
+        char names[35];
+        char firstLettre[2];
+        int retries = 0;
+        firstLettre[0] = names[0];
+        printf("\033[1;33mEntrer le nom du tache :\033[0m\n\n> ");
+        scanf(" %29[^\n]",&names);
+        for (int i = 0; i < count; i++)
+        {
+            if (dt[i].name == names)
+            {
+                printf("La tache a ete trouvee :\n\n");
+                printf("\033[1;32mTache %d a ete ajoutee le :\n (  %d / %d / %d ) ( %d:%d )\033[0m\n\033[1;33mNom du tache :\033[0m\t%s\n\033[1;33mDescription de tache :\033[0m%s\n\033[1;33mStatus de tache :\033[0m\t%s\n\033[1;33mDeadline de tache :\033[0m\t%d / %d / %d\n\033[1;33mIdentifiant de tache :\033[0m\t%d\n",i+1,tm[i].day,tm[i].month,tm[i].year,tm[i].hours,tm[i].minutes,dt[i].name,dt[i].discription,dt[i].status,dl[i].jour,dl[i].mois,dl[i].year,dt[i].id);
+            } else {
+                retries++;
+            }
+            if (retries >= count)
+            {
+                printf("\n\n\033[1;31mAucune tache a ete trouvee\033[0m\n");
+                doYouMean(firstLettre);
+                printf("\nDo you mean ? :\n\n");
+                for (int i = 0; i < count; i++)
+                {
+                    if (match[i])
+                    {
+                        printf("\033[0m\n\033[1;33mNom du tache :\033[0m\t%s\n\033[1;33mDescription de tache :\033[0m%s\n\033[1;33mStatus de tache :\033[0m\t%s\n\033[1;33mDeadline de tache :\033[0m\t%d / %d / %d\n\033[1;33mIdentifiant de tache :\033[0m\t%d\n",i+1,tm[match[i]].day,tm[match[i]].month,tm[match[i]].year,tm[match[i]].hours,tm[match[i]].minutes,dt[match[i]].name,dt[match[i]].discription,dt[match[i]].status,dl[match[i]].jour,dl[match[i]].mois,dl[match[i]].year,dt[match[i]].id);
+                    } else {
+                        for (int i = 0; i < count; i++)
+                        {
+                            if (dt[i].id != 999)
+                            {
+                                printf("\033[1;34m%d\033[0m- %s > \033[1;35m%s\033[0m.\n   - %s\n\t( %d / %d / %d )\n",i+1,dt[i].name,dt[i].status,dt[i].discription,dl[i].jour,dl[i].mois,dl[i].year);
+                                printf("\033[1;34mAjoutee le ( %d / %d / %d ) ( %d:%d )\n\n\033[0m",tm[i].day,tm[i].month,tm[i].year,tm[i].hours,tm[i].minutes);
 
+                            }
+                        }
+                    }
+                }   
+            }
+        }
+    } else if (s == 3)
+    {
+        main();
+    }
+    
 }
 int change() {
     printf("\n\033[1;33mLa liste des taches est comme suivant :\033[0m\n\n");
@@ -233,6 +326,7 @@ int change() {
                 {
                     j = 10;
                 }
+            counter(c-1);
         }
         printf("\033[1;32m\n      (!) Le deadline a ete modifiee   \n\033[0m");
         change();
@@ -312,7 +406,9 @@ printf("\n\033[1;32mListe des taches :\n\n\033[0m");
     {
         if (dt[i].id != 999)
         {
-            printf("\033[1;34m%d\033[0m- %s > \033[1;35m%s\033[0m.\n\t( %d / %d / %d )\n",i+1,dt[i].name,dt[i].status,dl[i].jour,dl[i].mois,dl[i].year);
+            printf("\033[1;34m%d\033[0m- %s > \033[1;35m%s\033[0m.\n   - %s\n\t( %d / %d / %d )\n",i+1,dt[i].name,dt[i].status,dt[i].discription,dl[i].jour,dl[i].mois,dl[i].year);
+            printf("\033[1;34mAjoutee le ( %d / %d / %d ) ( %d:%d )\n\n\033[0m",tm[i].day,tm[i].month,tm[i].year,tm[i].hours,tm[i].minutes);
+            
         }
     }
     printf("\n\n[\033[1;34m1\033[0m]- Triee Alphabitiquemet.\n[\033[1;34m2\033[0m]- Triee par deadline.\n[\033[1;34m3\033[0m]- affichier dont le deadline est dans 3 jours ou moins.\n\n> ");
@@ -374,10 +470,10 @@ printf("\n\033[1;32mListe des taches :\n\n\033[0m");
         }
         }
         printf("La liste des taches classer par deadline :\n\n");
-        for(int p = 0;p<=count;p++){
+        for(int p = 1;p<=count;p++){
                 if (dt[p].id != 999)
                 {
-                    printf("\033[1;34m%d\033[0m- %s > \033[1;35m%s\033[0m.\n\t( %d / %d / %d )\n",p+1,dt[index[p]].name,dt[index[p]].status,dl[index[p]].jour,dl[index[p]].mois,dl[index[p]].year);
+                    printf("\033[1;34m%d\033[0m- %s > \033[1;35m%s\033[0m.\n\t( %d / %d / %d )\n",p,dt[index[p]].name,dt[index[p]].status,dl[index[p]].jour,dl[index[p]].mois,dl[index[p]].year);
                 }
         	}
         a = 0;
@@ -482,7 +578,64 @@ int status() {
 
     printf("\n\n--Vous avez \033[1;34m%d\033[0m tache(s) En realisation.\n",doing);
 
-    printf("\n\n--Vous avez \033[1;34m%d\033[0m tache(s) En realisation.\n",done);   
+    printf("\n\n--Vous avez \033[1;34m%d\033[0m tache(s) En realisation.\n\n",done);   
 
+    for (int i = 0; i < count; i++){
+        if (dt[i].id != 999)
+        {
+            ending(i);
+            printf("\033[1;34m%d\033[0m- %s > \033[1;35m%s\033[0m.\n\t( %d / %d / %d ) : \033[1;34m%d\033[0m jours restant\n\n",i+1,dt[i].name,dt[i].status,dl[i].jour,dl[i].mois,dl[i].year,dt[i].end);
+        }
+    }
+    
 
+    main();
+}
+int ending(int i) {
+    time_t currentTime;
+    struct tm *timeInfo;
+
+    time(&currentTime);
+    timeInfo = localtime(&currentTime);
+
+    int year = timeInfo->tm_year + 1900; // Years since 1900, so add 1900
+	int month = timeInfo->tm_mon; // Months are zero-based,so add one.
+    int day = timeInfo->tm_mday;
+    //dates.
+
+    struct tm date1 = {0};
+    struct tm date2 = {0};
+
+    // Set the values for date1 and date2
+    date1.tm_year = year - 1900;
+    date1.tm_mon = month - 1;
+    date1.tm_mday = day;
+
+    date2.tm_year = dl[i].year - 1900;
+    date2.tm_mon = dl[i].mois - 1;
+    date2.tm_mday = dl[i].jour;
+
+    time_t time1 = mktime(&date1);
+    time_t time2 = mktime(&date2);
+
+    long int days = (time2 - time1) / 86400;
+
+    dt[i].end = days - 31;
+
+}
+int doYouMean(char firstLettre[0]){
+    int indexes[20];
+    int j;
+    for (int i = 0; i < count; i++)
+    {
+        indexes[i] = dt[i].name[0];
+    }
+    for (int i = 0; i < count; i++)
+    {
+        if (firstLettre[0] == indexes[i])
+        {
+            j++;
+            match[j] = i;
+        }
+    }
 }
